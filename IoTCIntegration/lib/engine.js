@@ -111,7 +111,7 @@ async function getDeviceHub(context, device) {
 
     const sasToken = await getRegistrationSasToken(context, deviceId);
 
-    url = `https://${registrationHost}/${context.idScope}/registrations/${deviceId}/register?api-version=${registrationApiVersion}`;
+    const registrationUrl = `https://${registrationHost}/${context.idScope}/registrations/${deviceId}/register?api-version=${registrationApiVersion}`;
     const registrationOptions = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: sasToken },
@@ -120,13 +120,13 @@ async function getDeviceHub(context, device) {
 
     try {
         context.log('[HTTP] Initiating device registration');
-        const response = await fetch(url, registrationOptions).then(res => res.json());
+        const response = await fetch(registrationUrl, registrationOptions).then(res => res.json());
 
         if (response.status !== 'assigning' || !response.operationId) {
             throw new Error('Unknown server response');
         }
 
-        url = `https://${registrationHost}/${context.idScope}/registrations/${deviceId}/operations/${response.operationId}?api-version=${registrationApiVersion}`;
+        const statusUrl = `https://${registrationHost}/${context.idScope}/registrations/${deviceId}/operations/${response.operationId}?api-version=${registrationApiVersion}`;
         const statusOptions = {
             method: 'GET',
             headers: { Authorization: sasToken }
@@ -138,7 +138,7 @@ async function getDeviceHub(context, device) {
             await new Promise(resolve => setTimeout(resolve, registrationStatusQueryTimeout));
 
             context.log('[HTTP] Querying device registration status');
-            const statusResponse = await fetch(url, statusOptions).then(res => res.json());
+            const statusResponse = await fetch(statusUrl, statusOptions).then(res => res.json());
 
             if (statusResponse.status === 'assigning') {
                 continue;
